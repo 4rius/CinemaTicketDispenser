@@ -185,7 +185,7 @@ public class MovieTicketSale extends Operation {
         char c = super.getDispenser().waitEvent(30);
         
         switch (c) { //Only the available films will be printed, existence of the objects is already checked
-            case 'A' -> sel = 0; //Rooms start at 0
+            case 'A' -> sel = 0; //Rooms start from 0
             case 'B' -> sel = 1;
             case 'C' -> sel = 2;
             case 'D' -> sel = 3;
@@ -261,7 +261,7 @@ public class MovieTicketSale extends Operation {
      * This method requires the number of seats to be charged, as well as the price
      * and information about the seats and room, so we can print them
      */
-    private boolean performPayment(Set<Seat> seats, Theater th, Session ss) throws IOException { //Tiene que pasarsele algun puto numero
+    private boolean performPayment(Set<Seat> seats, Theater th, Session ss) throws IOException {
         Operation payment = new PerformPayment(super.getDispenser(), super.getMultiplex(), this.computePrice(seats.size(), th.getPrice()), seats.size(), th.getFilm().getName());
         try {
             payment.doOperation();
