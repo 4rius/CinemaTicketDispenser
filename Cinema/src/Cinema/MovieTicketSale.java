@@ -50,7 +50,6 @@ public class MovieTicketSale extends Operation {
      * or a backup information in case it's a recovery.
      */
     public static MultiplexState state;
-    private final PerformPayment payment = new PerformPayment(super.getDispenser(), super.getMultiplex());
     
     /**
      *
@@ -101,7 +100,7 @@ public class MovieTicketSale extends Operation {
         //Avoid possible NP Exceptions
         if (seats instanceof Set<Seat> && th != null && ss != null) { try {
             //Check if the user chooses to go back to the main menu
-            if (this.performPayment(seats, th, ss, payment)) super.getDispenser().setMenuMode();
+            if (this.performPayment(seats, th, ss)) super.getDispenser().setMenuMode();
             else { //If the payment doesn't go through, we free the seats again
                 try { // O(n) :(
                     for (int i = 1; i < th.getMaxRows()+1; i++) { //ctd starts from 1,1
@@ -262,11 +261,9 @@ public class MovieTicketSale extends Operation {
      * This method requires the number of seats to be charged, as well as the price
      * and information about the seats and room, so we can print them
      */
-    private boolean performPayment(Set<Seat> seats, Theater th, Session ss, PerformPayment payment) throws IOException { //Tiene que pasarsele algun puto numero
+    private boolean performPayment(Set<Seat> seats, Theater th, Session ss) throws IOException { //Tiene que pasarsele algun puto numero
+        Operation payment = new PerformPayment(super.getDispenser(), super.getMultiplex(), this.computePrice(seats.size(), th.getPrice()), seats.size(), th.getFilm().getName());
         try {
-	    payment.setPrice(this.computePrice(seats.size(), th.getPrice()));
-	    payment.setMovie(th.getFilm().getName());
-	    payment.setSeats(seats.size());
             payment.doOperation();
             this.serializeMultiplexState(); //We save the current occupation, as well as fimls, distribution and rooms
             List <String> ticket;

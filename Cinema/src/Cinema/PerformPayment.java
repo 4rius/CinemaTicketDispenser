@@ -36,30 +36,26 @@ public class PerformPayment extends Operation {
     private final UrjcBankServer bank = new UrjcBankServer();
     /* I couldn't find another way to get the price here and set the description,
     these 3 attributes are not on the diagram but they are necessary*/
-    private int price;
-    private int seats;
-    private String movie;
+    private final int price;
+    private final int seats;
+    private final String movie;
 
     /**
      * @param ctd
      * @param mp
+     * @param price
+     * @param seats
+     * @param movie
      * 
+     * Creates the object including the price, number of seats and the title of the movie
+     * needed to set the provided description on the sequence diagram.
      */
-    public PerformPayment(CinemaTicketDispenser ctd, Multiplex mp) {
-	    super(ctd, mp);
+    public PerformPayment(CinemaTicketDispenser ctd, Multiplex mp, int price, int seats, String movie) {
+        super(ctd, mp);
+        this.price = price;
+        this.seats = seats;
+        this.movie = movie;
     }
-
-	public void setPrice(int price) {
-		this.price = price;
-	}
-
-	public void setSeats(int seats) {
-		this.seats = seats;
-	}
-
-	public void setMovie(String movie) {
-		this.movie = movie;
-	}
 
     @Override
     public void doOperation() { //Figura 9
