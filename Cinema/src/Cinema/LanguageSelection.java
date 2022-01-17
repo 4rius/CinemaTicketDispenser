@@ -54,7 +54,8 @@ public class LanguageSelection extends Operation {
             case 'B' -> super.getMultiplex().setLanguage("Cinema/es");
             case 'C' -> super.getMultiplex().setLanguage("Cinema/cat");
             case 'D' -> super.getMultiplex().setLanguage("Cinema/eus");
-            default -> super.getMultiplex().setLanguage("Cinema/en"); //If the user doesn't select a language, English is the default
+            case '1' -> super.getDispenser().retainCreditCard(false);
+            default -> {} //If the user doesn't select a language, English is the default
         }
     }
     
