@@ -67,17 +67,27 @@ public class MainMenu extends Operation {
         
         while (true) {
             
+        //If there's an unwanted card on the dispenser, we remove it
+        super.getDispenser().setMessageMode();
+        super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("REMOVE YOUR CARD"));
+        super.getDispenser().setDescription(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("CARDTHREAT"));
+            for (int i = 0; i < 6; i++) {
+                super.getDispenser().setOption(i, null);
+            }
+        boolean expelled = super.getDispenser().expelCreditCard(30);
+        if (!expelled) super.getDispenser().retainCreditCard(true);
+        
+        super.getDispenser().setMenuMode();
         super.getDispenser().setTitle(this.getTitle());
         super.getDispenser().setImage(null);
-        super.getDispenser().setDescription("");
+        super.getDispenser().setDescription(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("WELCOME"));
         for (int cont = 0; cont < OperationList.size(); cont++) { //Print all options
             super.getDispenser().setOption(cont, OperationList.get(cont).getTitle());
            }
         for (int cont = OperationList.size(); cont < 6; cont++) { //Remove non-existing options, there can only be 6 options
             super.getDispenser().setOption(cont, null);
            }
-        
-
+                    
         char c = super.getDispenser().waitEvent(30);
         switch (c) { //This way if we create any new option, we would be able to access it, but not if it doesn't exist
             case 'A' -> OperationList.get(0).doOperation();
@@ -86,8 +96,9 @@ public class MainMenu extends Operation {
             case 'D' -> OperationList.get(3).doOperation();
             case 'E' -> OperationList.get(4).doOperation();
             case 'F' -> OperationList.get(5).doOperation();
+            case '1' -> super.getDispenser().retainCreditCard(false);
             default -> this.presentMenu();
-        }   
+        } 
         }
     }
     

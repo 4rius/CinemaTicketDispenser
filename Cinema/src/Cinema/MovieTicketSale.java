@@ -46,10 +46,12 @@ public class MovieTicketSale extends Operation {
     
     /**
      *
-     * The core of the cinema, it contains a new state in case it's a new day,
+     * The core of the cinema is the state, it contains a new state in case it's a new day,
      * or a backup information in case it's a recovery.
+     * We also have a new performpayment that will create the bank we'll use throughout the run time
      */
     public static MultiplexState state;
+    private final PerformPayment payment = new PerformPayment(super.getDispenser(), super.getMultiplex());
     
     /**
      *
@@ -100,7 +102,7 @@ public class MovieTicketSale extends Operation {
         //Avoid possible NP Exceptions
         if (seats instanceof Set<Seat> && th != null && ss != null) { try {
             //Check if the user chooses to go back to the main menu
-            if (this.performPayment(seats, th, ss)) super.getDispenser().setMenuMode();
+            if (this.performPayment(seats, th, ss, payment)) super.getDispenser().setMenuMode();
             else { //If the payment doesn't go through, we free the seats again
                 try { // O(n) :(
                     for (int i = 1; i < th.getMaxRows()+1; i++) { //ctd starts from 1,1
@@ -141,11 +143,15 @@ public class MovieTicketSale extends Operation {
         char c = super.getDispenser().waitEvent(30);
         
         switch (c) { //Only the available films will be printed, existence of the objects is already checked
-            case 'A' -> sel = 0; //Rooms start at 0
+            case 'A' -> sel = 0; //Rooms start from 0
             case 'B' -> sel = 1;
             case 'C' -> sel = 2;
             case 'D' -> sel = 3;
             case 'F' -> sel = 5; //There can only be up to 4 movies, therefore number 5 will never be used
+            case '1' -> {
+                super.getDispenser().retainCreditCard(false);
+                sel = 5;
+            }
             default -> sel = 5; //If the user doesn't perform any action within 30 seconds, the system goes back to the main menu
         }
         if (sel <= theaterList.size()) {
@@ -165,7 +171,7 @@ public class MovieTicketSale extends Operation {
         
         super.getDispenser().setTitle(th.getFilm().getName()+java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString(" - SESSIONS"));
         super.getDispenser().setImage(th.getFilm().getPoster());
-        super.getDispenser().setDescription(th.getFilm().getDescription()+"\n\n"+
+        super.getDispenser().setDescription(th.getFilm().getDescription()+"\n"+
                 java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("PRICE: ")+th.getPrice()+"€");
         
         //Print the available hours
@@ -185,12 +191,16 @@ public class MovieTicketSale extends Operation {
         char c = super.getDispenser().waitEvent(30);
         
         switch (c) { //Only the available films will be printed, existence of the objects is already checked
-            case 'A' -> sel = 0; //Rooms start at 0
+            case 'A' -> sel = 0; //Rooms start from 0
             case 'B' -> sel = 1;
             case 'C' -> sel = 2;
             case 'D' -> sel = 3;
             case 'E' -> sel = 4;
             case 'F' -> sel = 5; //Number 5 should never be used for other than returning to the main menu
+            case '1' -> {
+                super.getDispenser().retainCreditCard(false);
+                sel = 5;
+            }
             default -> sel = 5;
         }
         
@@ -220,7 +230,7 @@ public class MovieTicketSale extends Operation {
         Set<Seat> tempseats= new HashSet<>();
         while (true) {
             char c = super.getDispenser().waitEvent(30);
-            if (c != 0 && c != 'A') {
+            if (c != 0 && c != 'A' && c != '1') { //We check the user didn't choose to cancel
                 byte row = (byte)((c & 0xFF00) >> 8);
                 byte col = (byte)(c & 0xFF);
                 //We check if the user can select more seats, or if he's trying to delete a previous selection
@@ -233,24 +243,27 @@ public class MovieTicketSale extends Operation {
                     } else if (ss.isOccupied(row, col)) { //The seat was already occupied
                         super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("THAT SEAT IS ALREADY TAKEN"));
                         } else if (c == 'B' && !tempseats.isEmpty()) { //User chooses to pay
-                                return tempseats;
+                                return tempseats; //We return the seats that are to be bought this specific session
                                 } else if ( c =='B' && tempseats.isEmpty()) super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("SELECT AT LEAST 1 SEAT"));
-                                else {
-                                    super.getDispenser().setTitle("Row: " + row + " Col: " + col);
+                                else if (row != 0) { //If row is 0 is either a button or a card
+                                    super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("ROW: ") + row + " " + java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("COL: ") + col);
                                     super.getDispenser().markSeat(row, col, 1);
-                                    tempseats.add(new Seat(row, col));//This temporal sets let us know the seats that are being bought during this session
+                                    tempseats.add(new Seat(row, col));//This temporal set lets us know the seats that are being bought during this session
                                     ss.occupiesSeat(row, col);
                                 }
                 } 
-            } else { //User chooses to cancel or 30 secs no action, removes current selection
-                for (int i = 1; i < th.getMaxRows()+1; i++) { //Ctd starts on 1,1, starts and finishes 1+ the seat set value
-                    for (int j = 1; j < th.getMaxCols()+1; j++) {
-                        if (tempseats.contains(new Seat(i, j))) {
-                            ss.unoccupiesSeat(i, j);
+            } else { //User chooses to cancel or 30 secs no action, we remove current selection
+                if (!tempseats.isEmpty()) { //Avoid O(n) if the user didn't get to choose any seats
+                    for (int i = 1; i < th.getMaxRows()+1; i++) { //Ctd starts on 1,1, starts and finishes 1+ the seat set value
+                        for (int j = 1; j < th.getMaxCols()+1; j++) {
+                            if (tempseats.contains(new Seat(i, j))) {
+                                ss.unoccupiesSeat(i, j);
+                            }
                         }
                     }
-                }
-                super.getDispenser().setMenuMode();
+                    if (c == '1') super.getDispenser().retainCreditCard(false); //User randomly inserted a card 
+
+            }
                 return null;
             }
         }
@@ -261,17 +274,21 @@ public class MovieTicketSale extends Operation {
      * This method requires the number of seats to be charged, as well as the price
      * and information about the seats and room, so we can print them
      */
-    private boolean performPayment(Set<Seat> seats, Theater th, Session ss) throws IOException { //Tiene que pasarsele algun puto numero
-        Operation payment = new PerformPayment(super.getDispenser(), super.getMultiplex(), this.computePrice(seats.size(), th.getPrice()), seats.size(), th.getFilm().getName());
+    private boolean performPayment(Set<Seat> seats, Theater th, Session ss, PerformPayment payment) throws IOException {
         try {
+            /*Without these setters we can't provide this information, required as stated on the sequence diagram,
+            so we'll need to have these setters and attributes on the performPayment class.*/
+	    payment.setPrice(this.computePrice(seats.size(), th.getPrice()));
+	    payment.setMovie(th.getFilm().getName());
+	    payment.setSeats(seats.size());
             payment.doOperation();
-            this.serializeMultiplexState(); //We save the current occupation, as well as fimls, distribution and rooms
+            this.serializeMultiplexState(); //We save the current occupation, as well as films, distribution and rooms
             List <String> ticket;
             /*I could have created a getter on the seat but the complexity is the same
             only difference is the amount of items the program iterates, in this case
             it iterates and searches for the seats that were bought during this session.
             The session occupied seats start on 1 due to the ctd configuration, therefore
-            they end 1 up the values of the rows and colums*/
+            they end 1 up the values of the rows and columms*/
             for (int i = 1; i < th.getMaxRows()+1; i++) { //Fors start on 1 because the occupied seats always start from 1,1
                 for (int j = 1; j < th.getMaxCols()+1; j++) {
                     if (seats.contains(new Seat(i, j))) {
@@ -298,8 +315,8 @@ public class MovieTicketSale extends Operation {
         Set<Seat> seatSet = th.getSeatSet();
         for (int i = 0; i < th.getMaxRows(); i++) {
             /*uses +1 because the first row and columns on the ctd are 1, so we are not 1 seat behind
-            and the seat set starts on 0, so the seats will be on 0,x, but the occupied and the
-            room can't represent that, instead they locatte them starting on 1,x*/
+            and the seat set starts on 0, so the seats will start from 0,x, but the occupied and the
+            room can't represent that, instead they locate them starting from 1,x*/
             for (int j = 0; j < th.getMaxCols(); j++) {
                 if (seatSet.contains(new Seat(i, j))) {
                     //Check wether the seats are occupied or not

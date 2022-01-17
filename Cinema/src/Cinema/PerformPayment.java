@@ -36,26 +36,30 @@ public class PerformPayment extends Operation {
     private final UrjcBankServer bank = new UrjcBankServer();
     /* I couldn't find another way to get the price here and set the description,
     these 3 attributes are not on the diagram but they are necessary*/
-    private final int price;
-    private final int seats;
-    private final String movie;
+    private int price;
+    private int seats;
+    private String movie;
 
     /**
      * @param ctd
      * @param mp
-     * @param price
-     * @param seats
-     * @param movie
      * 
-     * Creates the object including the price, number of seats and the title of the movie
-     * needed to set the provided description on the sequence diagram.
      */
-    public PerformPayment(CinemaTicketDispenser ctd, Multiplex mp, int price, int seats, String movie) {
-        super(ctd, mp);
-        this.price = price;
-        this.seats = seats;
-        this.movie = movie;
+    public PerformPayment(CinemaTicketDispenser ctd, Multiplex mp) {
+	    super(ctd, mp);
     }
+
+	public void setPrice(int price) {
+		this.price = price;
+	}
+
+	public void setSeats(int seats) {
+		this.seats = seats;
+	}
+
+	public void setMovie(String movie) {
+		this.movie = movie;
+	}
 
     @Override
     public void doOperation() { //Figura 9
@@ -65,63 +69,55 @@ public class PerformPayment extends Operation {
         super.getDispenser().setOption(0, java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("CONFIRM"));
         super.getDispenser().setOption(1, java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("CANCEL"));
         
-        char c = 0;
-        while (c != 'B') {
-            c = super.getDispenser().waitEvent(30);
-            if (c == 'B') {
-                boolean expelled = super.getDispenser().expelCreditCard(30); //Expell the card if inserted
-                if (!expelled) super.getDispenser().retainCreditCard(true);
-                throw new RuntimeException("To be catched");  //The user cancels the process, or payment failed, prevents an error if the user clicks try again and then cancel, as it broke out when clicking try again
-            }
-            if (c == '1') super.getDispenser().retainCreditCard(false);
-            if (c == 'A') {
-                if (this.bank.comunicationAvaiable()) {
-                    boolean payment = false;
-                    try {
-                        payment = bank.doOperation(super.getDispenser().getCardNumber(), this.price);
-                    } catch (CommunicationException ex) {
-                        super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("ERROR"));
-                        super.getDispenser().setDescription(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("CONNECTION INTERRUPTED"));
-                        super.getDispenser().setOption(0, java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("TRY AGAIN"));
-                        super.getDispenser().setOption(1, java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("CANCEL"));
-                        boolean expelled = super.getDispenser().expelCreditCard(30);
-                        if (!expelled) super.getDispenser().retainCreditCard(true);
-                    }
-                    if (payment) {
-                        super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("SUCCESS!"));
-                        super.getDispenser().setDescription(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("YOU CAN SAFELY REMOVE YOUR CARD NOW"));
-                        super.getDispenser().setOption(0, null);
-                        super.getDispenser().setOption(1, null);
-                        boolean expelled = super.getDispenser().expelCreditCard(30);
-                        if (!expelled) super.getDispenser().retainCreditCard(true);
-                        c = 'B';
-                    } else {
-                        super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("ERROR"));
-                        super.getDispenser().setDescription(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("LOW BALANCE OR CARD NOT FOUND"));
-                        super.getDispenser().setOption(0, java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("TRY AGAIN"));
-                        super.getDispenser().setOption(1, java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("CANCEL"));
-                        boolean expelled = super.getDispenser().expelCreditCard(30);
-                        if (!expelled) super.getDispenser().retainCreditCard(true);
-                        while (true) {
-                            c = super.getDispenser().waitEvent(30);
-                            if (c == '1') {
-                                super.getDispenser().retainCreditCard(false);
-                                break;
-                            } //Payment will work if the user inserts a card now then click try again
-                            if ( c == 'B') throw new RuntimeException("To be catched"); //The user cancels the process, or payment failed
-                        }
-                    }
-                } else {
-                    super.getDispenser().setDescription(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("THIS SERVICE IS TEMPORARILY DOWN"));
-                    super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("ERROR"));
+        OUTER: //One break needs to exit the switch and the while
+        while (true) {
+            char c = super.getDispenser().waitEvent(30);
+            switch (c) {
+                case 'B' -> {
+                    super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("REMOVE YOUR CARD"));
+                    super.getDispenser().setDescription(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("CARDTHREAT"));
                     super.getDispenser().setOption(0, null);
-                    super.getDispenser().setOption(1, java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("MAIN MENU"));
-                    boolean expelled = super.getDispenser().expelCreditCard(30);
+                    super.getDispenser().setOption(1, null);
+                    boolean expelled = super.getDispenser().expelCreditCard(30); //Expell the card if inserted
                     if (!expelled) super.getDispenser().retainCreditCard(true);
-                    while (c != 'B') {
-                            c = super.getDispenser().waitEvent(30);
-                            if ( c == 'B') throw new RuntimeException("To be catched");//The user cancels the process, or payment failed
+                    throw new RuntimeException("To be catched");  //The user cancels the process, or payment failed, prevents an error if the user clicks try again and then cancel, as it broke out when clicking try again
+                }
+                case '1' -> super.getDispenser().retainCreditCard(false);
+                case 'A' -> {
+                    if (this.bank.comunicationAvaiable()) {
+                        //Commavailable
+                        boolean payment = false;
+                        try {
+                            payment = bank.doOperation(super.getDispenser().getCardNumber(), this.price);
+                        } catch (CommunicationException ex) {
+                            super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("ERROR"));
+                            super.getDispenser().setDescription(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("CONNECTION INTERRUPTED"));
+                            super.getDispenser().setOption(0, java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("TRY AGAIN"));
+                            super.getDispenser().setOption(1, java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("CANCEL"));
+                        }   if (payment) {
+                            super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("SUCCESS!"));
+                            super.getDispenser().setDescription(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("YOU CAN SAFELY REMOVE YOUR CARD NOW"));
+                            super.getDispenser().setOption(0, null);
+                            super.getDispenser().setOption(1, null);
+                            boolean expelled2 = super.getDispenser().expelCreditCard(30);
+                            if (!expelled2) super.getDispenser().retainCreditCard(true);
+                            break OUTER; //Exit the loop without triggering the exception
+                        } else {
+                            super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("ERROR"));
+                            super.getDispenser().setDescription(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("LOW BALANCE OR CARD NOT FOUND"));
+                            super.getDispenser().setOption(0, java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("TRY AGAIN"));
+                            super.getDispenser().setOption(1, java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("CANCEL"));
                         }
+                    } else {
+                        super.getDispenser().setDescription(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("THIS SERVICE IS TEMPORARILY DOWN"));
+                        super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("ERROR"));
+                        super.getDispenser().setOption(0, null);
+                        super.getDispenser().setOption(1, java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("MAIN MENU"));
+                    }
+                }
+                default -> {//This means the user needs to strictly choose to cancel to get his card back, if inactivity triggers this, it will automatically retain the card
+                        super.getDispenser().retainCreditCard(true);
+                        throw new RuntimeException("To be catched");  //30 secs no action
                 }
             }
         }

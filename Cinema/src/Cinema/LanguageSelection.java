@@ -38,6 +38,7 @@ public class LanguageSelection extends Operation {
     @Override
     public void doOperation() {
         super.getDispenser().setTitle(this.getTitle());
+        super.getDispenser().setDescription("");
         //Languages don't change usually on conventional apps, so they will stay static
         super.getDispenser().setOption(0, "English");
         super.getDispenser().setOption(1, "Castellano");
@@ -53,7 +54,7 @@ public class LanguageSelection extends Operation {
             case 'B' -> super.getMultiplex().setLanguage("Cinema/es");
             case 'C' -> super.getMultiplex().setLanguage("Cinema/cat");
             case 'D' -> super.getMultiplex().setLanguage("Cinema/eus");
-            default -> throw new RuntimeException("Error while trying to fetch/select language");
+            default -> super.getMultiplex().setLanguage("Cinema/en"); //If the user doesn't select a language, English is the default
         }
     }
     
