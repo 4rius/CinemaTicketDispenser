@@ -73,15 +73,6 @@ public class PerformPayment extends Operation {
         while (true) {
             char c = super.getDispenser().waitEvent(30);
             switch (c) {
-                case 'B' -> {
-                    super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("REMOVE YOUR CARD"));
-                    super.getDispenser().setDescription(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("CARDTHREAT"));
-                    super.getDispenser().setOption(0, null);
-                    super.getDispenser().setOption(1, null);
-                    boolean expelled = super.getDispenser().expelCreditCard(30); //Expell the card if inserted
-                    if (!expelled) super.getDispenser().retainCreditCard(true);
-                    throw new RuntimeException("To be catched");  //The user cancels the process, or payment failed, prevents an error if the user clicks try again and then cancel, as it broke out when clicking try again
-                }
                 case '1' -> super.getDispenser().retainCreditCard(false);
                 case 'A' -> {
                     if (this.bank.comunicationAvaiable()) {
@@ -115,9 +106,14 @@ public class PerformPayment extends Operation {
                         super.getDispenser().setOption(1, java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("MAIN MENU"));
                     }
                 }
-                default -> {//This means the user needs to strictly choose to cancel to get his card back, if inactivity triggers this, it will automatically retain the card
-                        super.getDispenser().retainCreditCard(true);
-                        throw new RuntimeException("To be catched");  //30 secs no action
+                default -> { //Inactivity or cancellations, either way we try to expel a credit card if there is one, and we throw the exception
+                        super.getDispenser().setTitle(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("REMOVE YOUR CARD"));
+                        super.getDispenser().setDescription(java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("CARDTHREAT2"));
+                        super.getDispenser().setOption(0, null);
+                        super.getDispenser().setOption(1, null);
+                        boolean expelled = super.getDispenser().expelCreditCard(30); //Expell the card if inserted
+                        if (!expelled) super.getDispenser().retainCreditCard(true);
+                        throw new RuntimeException("To be catched");  //The user cancels the process, or payment failed, prevents an error if the user clicks try again and then cancel, as it broke out when clicking try again
                 }
             }
         }

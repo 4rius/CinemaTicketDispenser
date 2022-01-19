@@ -48,7 +48,7 @@ public class MovieTicketSale extends Operation {
      *
      * The core of the cinema is the state, it contains a new state in case it's a new day,
      * or a backup information in case it's a recovery.
-     * We also have a new performpayment that will create the bank we'll use throughout the run time
+     * We also have a new PerformPayment that will create the bank we'll use throughout the run time
      */
     public static MultiplexState state;
     private final PerformPayment payment = new PerformPayment(super.getDispenser(), super.getMultiplex());
@@ -83,6 +83,10 @@ public class MovieTicketSale extends Operation {
         
     }
 
+    /**
+     *
+     * Performs a ticket sale
+     */
     @Override
     public void doOperation() {
         Theater th = this.selectTheater();
@@ -334,6 +338,12 @@ public class MovieTicketSale extends Operation {
         return seats * price;
     }
     
+    /**
+     *
+     * @return
+     * 
+     * Returns choose a movie title
+     */
     @Override
     public String getTitle() {
         return java.util.ResourceBundle.getBundle(super.getMultiplex().getLanguage()).getString("CHOOSE A MOVIE");

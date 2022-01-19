@@ -145,6 +145,7 @@ public class Theater implements Serializable {
         FileReader loadSeats = new FileReader("assets/Theater"+this.getNumber()+".txt");
         Scanner sc = new Scanner(loadSeats);
         
+        //Traverse the whole "matrix" of the longest rows and cols, and checks wether we have a * on that position
         for (int i = 0; i < this.getMaxRows(); i++) {
             String line = sc.nextLine();
             char[] toCharArray = line.toCharArray();

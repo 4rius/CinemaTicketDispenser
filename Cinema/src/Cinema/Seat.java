@@ -52,7 +52,7 @@ public class Seat implements Serializable {
      * @param obj
      * @return
      * 
-     * Equals has been overridden so that we could use contains with the HasSet
+     * Equals has been overridden so that we could use contains with the HashSet
      */
     @Override
     public boolean equals(Object obj) {
