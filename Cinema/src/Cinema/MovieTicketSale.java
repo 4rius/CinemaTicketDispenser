@@ -30,6 +30,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -63,8 +65,11 @@ public class MovieTicketSale extends Operation {
      */
     public MovieTicketSale(CinemaTicketDispenser ctd, Multiplex mp) {
         super(ctd, mp);
+        
+        ZoneId zone = ZoneId.of("Europe/Madrid");
+        LocalDate d = LocalDate.now(zone);
                 
-        File f = new File("assets/backup.bin"); //If the backup file exists, we will recover its previous state
+        File f = new File("assets/"+ d.toString()+"-transactions.bin"); //If the backup file exists, we will recover its previous state
         if(f.exists()) {
             try {
                 MovieTicketSale.deserializeMultiplexState();
@@ -358,7 +363,10 @@ public class MovieTicketSale extends Operation {
      */
     public void serializeMultiplexState() throws FileNotFoundException, IOException {
         
-        FileOutputStream foutputStream = new FileOutputStream("assets/backup.bin");
+        ZoneId zone = ZoneId.of("Europe/Madrid");
+        LocalDate d = LocalDate.now(zone);
+        
+        FileOutputStream foutputStream = new FileOutputStream("assets/"+ d.toString()+"-transactions.bin");
 	ObjectOutputStream outputStream = new ObjectOutputStream(foutputStream);
 		
 	outputStream.writeObject(state);
@@ -374,7 +382,10 @@ public class MovieTicketSale extends Operation {
      */
     public static void deserializeMultiplexState() throws FileNotFoundException, IOException, ClassNotFoundException {
         
-        FileInputStream loadBackup = new FileInputStream("assets/backup.bin");
+        ZoneId zone = ZoneId.of("Europe/Madrid");
+        LocalDate d = LocalDate.now(zone);
+        
+        FileInputStream loadBackup = new FileInputStream("assets/"+ d.toString()+"-transactions.bin");
 	ObjectInputStream extractBackup = new ObjectInputStream(loadBackup);
         
         state = (MultiplexState) extractBackup.readObject();
